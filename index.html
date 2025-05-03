@@ -23,13 +23,32 @@
       border-radius: 8px;
       box-shadow: 0 0 10px rgba(0,0,0,0.3);
     }
+
+    #addForm {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      z-index: 100;
+      background: white;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+      display: none;
+    }
+
+    #addForm input, #addForm select {
+      display: block;
+      margin-bottom: 6px;
+      width: 100%;
+    }
   </style>
   <script src="https://js.arcgis.com/4.29/"></script>
 </head>
 <body>
   <div id="viewDiv"></div>
+
   <div id="filterPanel">
-    <label for="speciesSelect">Select species:</label>
+    <label for="speciesSelect">Filter species:</label>
     <select id="speciesSelect">
       <option value="">All</option>
       <option value="Newt">Newt</option>
@@ -38,15 +57,33 @@
     </select>
   </div>
 
+  <div id="addForm">
+    <h3>Add Observation</h3>
+    <label>Species:</label>
+    <select id="formSpecies">
+      <option value="Newt">Newt</option>
+      <option value="Frog">Frog</option>
+      <option value="Salamander">Salamander</option>
+    </select>
+    <label>Location name:</label>
+    <input type="text" id="formLocation" placeholder="e.g., Wetland Trail" />
+    <label>Date:</label>
+    <input type="date" id="formDate" />
+    <button id="submitBtn">Submit Observation</button>
+  </div>
+
   <script>
     require([
       "esri/Map",
       "esri/views/MapView",
-      "esri/layers/FeatureLayer"
-    ], function(Map, MapView, FeatureLayer) {
+      "esri/layers/FeatureLayer",
+      "esri/Graphic"
+    ], function(Map, MapView, FeatureLayer, Graphic) {
+
+      let clickedPoint = null;
 
       const amphibianLayer = new FeatureLayer({
-        url: "https://services.arcgis.com/V6ZHFr6zdgNZuVG0/ArcGIS/rest/services/Animal_Observations/FeatureServer/0?utm_source=chatgpt.com",
+        url: "https://services.arcgis.com/V6ZHFr6zdgNZuVG0/ArcGIS/rest/services/Animal_Observations/FeatureServer/0",
         outFields: ["*"],
         popupTemplate: {
           title: "{Species}",
@@ -66,12 +103,57 @@
         zoom: 4
       });
 
+      // Filter species
       const speciesSelect = document.getElementById("speciesSelect");
       speciesSelect.addEventListener("change", () => {
         const species = speciesSelect.value;
         amphibianLayer.definitionExpression = species ? `Species = '${species}'` : null;
       });
 
+      // Show form on map click
+      view.on("click", function(event) {
+        view.hitTest(event).then(response => {
+          // Ignore clicks on existing features
+          if (response.results.length === 0) {
+            clickedPoint = event.mapPoint;
+            document.getElementById("addForm").style.display = "block";
+          }
+        });
+      });
+
+      // Submit new observation
+      document.getElementById("submitBtn").addEventListener("click", () => {
+        const species = document.getElementById("formSpecies").value;
+        const location = document.getElementById("formLocation").value;
+        const date = document.getElementById("formDate").value;
+
+        if (!clickedPoint || !species || !date) {
+          alert("Please fill out all fields.");
+          return;
+        }
+
+        const attributes = {
+          Species: species,
+          Location: location,
+          Date: date
+        };
+
+        const newFeature = new Graphic({
+          geometry: clickedPoint,
+          attributes: attributes
+        });
+
+        amphibianLayer.applyEdits({
+          addFeatures: [newFeature]
+        }).then((result) => {
+          if (result.addFeatureResults.length > 0) {
+            alert("Observation added!");
+            document.getElementById("addForm").style.display = "none";
+          } else {
+            alert("Error adding feature.");
+          }
+        });
+      });
     });
   </script>
 </body>
