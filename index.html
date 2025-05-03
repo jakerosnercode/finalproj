@@ -4,8 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Amphibian Observation Map</title>
-  <!-- Add your API key here -->
-  <script src="https://js.arcgis.com/4.29/?apiKey=AAPTxy8BH1VEsoebNVZXo8HurEMEVQbKvAbZnpzPKZRxuMNtUzDq8ag3E3FbEUVJMU0hrtmVGRJepK1vokNRd6QHYHvJ59WIxIBvBCEs9cPVdWnD4aXedEaWZSNwNzqqh5gyGL2CcmseyfeF5Gt8e3Mi7KdSA7BcKz3dTA6_yKBu_g1SbTFM-Zp9MUafCKP5vn2qhGgQBFLx91QEhf6EinAD207CcjqmQhLAFQ4sF6MsT9U.AT1_xORu7DFJ"></script>
   <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/light/main.css">
   <style>
     html, body, #viewDiv {
@@ -25,31 +23,13 @@
       border-radius: 8px;
       box-shadow: 0 0 10px rgba(0,0,0,0.3);
     }
-
-    #addForm {
-      position: absolute;
-      bottom: 10px;
-      left: 10px;
-      z-index: 100;
-      background: white;
-      padding: 10px;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.3);
-      display: none;
-    }
-
-    #addForm input, #addForm select {
-      display: block;
-      margin-bottom: 6px;
-      width: 100%;
-    }
   </style>
+  <script src="https://js.arcgis.com/4.29/"></script>
 </head>
 <body>
   <div id="viewDiv"></div>
-
   <div id="filterPanel">
-    <label for="speciesSelect">Filter species:</label>
+    <label for="speciesSelect">Select species:</label>
     <select id="speciesSelect">
       <option value="">All</option>
       <option value="Newt">Newt</option>
@@ -58,37 +38,19 @@
     </select>
   </div>
 
-  <div id="addForm">
-    <h3>Add Observation</h3>
-    <label>Species:</label>
-    <select id="formSpecies">
-      <option value="Newt">Newt</option>
-      <option value="Frog">Frog</option>
-      <option value="Salamander">Salamander</option>
-    </select>
-    <label>Location name:</label>
-    <input type="text" id="formLocation" placeholder="e.g., Wetland Trail" />
-    <label>Date:</label>
-    <input type="date" id="formDate" />
-    <button id="submitBtn">Submit Observation</button>
-  </div>
-
   <script>
     require([
       "esri/Map",
       "esri/views/MapView",
-      "esri/layers/FeatureLayer",
-      "esri/Graphic"
-    ], function(Map, MapView, FeatureLayer, Graphic) {
-
-      let clickedPoint = null;
+      "esri/layers/FeatureLayer"
+    ], function(Map, MapView, FeatureLayer) {
 
       const amphibianLayer = new FeatureLayer({
-        url: "https://services.arcgis.com/LBbVDC0hKPAnLRpO/arcgis/rest/services/amphibian/FeatureServer", 
+        url: "https://services.arcgis.com/V6ZHFr6zdgNZuVG0/ArcGIS/rest/services/Animal_Observations/FeatureServer/0?utm_source=chatgpt.com",
         outFields: ["*"],
         popupTemplate: {
           title: "{Species}",
-          content: "Observed on {DateObs} at {Location}."
+          content: "Observed on {Date} at {Location}."
         }
       });
 
@@ -104,57 +66,12 @@
         zoom: 4
       });
 
-      // Filter species
       const speciesSelect = document.getElementById("speciesSelect");
       speciesSelect.addEventListener("change", () => {
         const species = speciesSelect.value;
-        amphibianLayer.definitionExpression = species ? `Species = '${species}'` : null;
+        amphibianLayer.definitionExpression = species ? Species = '${species}' : null;
       });
 
-      // Show form on map click
-      view.on("click", function(event) {
-        view.hitTest(event).then(response => {
-          // Ignore clicks on existing features
-          if (response.results.length === 0) {
-            clickedPoint = event.mapPoint;
-            document.getElementById("addForm").style.display = "block";
-          }
-        });
-      });
-
-      // Submit new observation
-      document.getElementById("submitBtn").addEventListener("click", () => {
-        const species = document.getElementById("formSpecies").value;
-        const location = document.getElementById("formLocation").value;
-        const date = document.getElementById("formDate").value;
-
-        if (!clickedPoint || !species || !date) {
-          alert("Please fill out all fields.");
-          return;
-        }
-
-        const attributes = {
-          Species: species,
-          Location: location,
-          DateObs: date // 
-        };
-
-        const newFeature = new Graphic({
-          geometry: clickedPoint,
-          attributes: attributes
-        });
-
-        amphibianLayer.applyEdits({
-          addFeatures: [newFeature]
-        }).then((result) => {
-          if (result.addFeatureResults.length > 0) {
-            alert("Observation added!");
-            document.getElementById("addForm").style.display = "none";
-          } else {
-            alert("Error adding feature.");
-          }
-        });
-      });
     });
   </script>
 </body>
