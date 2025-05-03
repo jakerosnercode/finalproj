@@ -83,11 +83,11 @@
       let clickedPoint = null;
 
       const amphibianLayer = new FeatureLayer({
-        url: "https://services.arcgis.com/V6ZHFr6zdgNZuVG0/ArcGIS/rest/services/Animal_Observations/FeatureServer/0",
+        url: "https://services.arcgis.com/LBbVDC0hKPAnLRpO/arcgis/rest/services/amphibian/FeatureServer", 
         outFields: ["*"],
         popupTemplate: {
           title: "{Species}",
-          content: "Observed on {Date} at {Location}."
+          content: "Observed on {DateObs} at {Location}."
         }
       });
 
@@ -135,7 +135,7 @@
         const attributes = {
           Species: species,
           Location: location,
-          Date: date
+          DateObs: date // ✅ This is the updated field name
         };
 
         const newFeature = new Graphic({
